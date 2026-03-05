@@ -1,36 +1,86 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Role Play Server
 
-## Getting Started
+角色扮演聊天机器人后端服务
 
-First, run the development server:
+## 技术栈
+
+- **前端框架**: Next.js 16 (App Router)
+- **样式**: Tailwind CSS
+- **数据库**: Neon (PostgreSQL)
+- **ORM**: Drizzle ORM
+- **文件存储**: Vercel Blob
+- **AI 聊天**: MiniMax API
+
+## 功能特性
+
+1. **Admin Portal**: 角色管理后台，可在线测试聊天流程
+2. **角色管理**: 支持创建、编辑、删除角色，包含形象图片、昵称、本名、人设、朋友圈
+3. **聊天功能**: 基于 MiniMax API 的智能对话
+4. **对话持久化**: 自动保存对话记录
+
+## 快速开始
+
+### 1. 安装依赖
+
+```bash
+npm install
+```
+
+### 2. 配置环境变量
+
+复制 `.env.example` 为 `.env` 并填写配置：
+
+```env
+# Database (Neon)
+DATABASE_URL=postgresql://username:password@host.neon.tech/role-play-server?sslmode=require
+
+# Vercel Blob
+BLOB_READ_WRITE_TOKEN=your_vercel_blob_token
+
+# MiniMax API
+MINIMAX_API_KEY=your_minimax_api_key
+MINIMAX_GROUP_ID=your_minimax_group_id
+```
+
+### 3. 初始化数据库
+
+```bash
+npm run db:push
+```
+
+### 4. 启动开发服务器
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+访问 http://localhost:3000/admin 进入管理后台
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 部署
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+项目已配置 Vercel 部署，推送到 GitHub 后在 Vercel 导入项目即可。
 
-## Learn More
+需要配置的环境变量：
+- `DATABASE_URL` - Neon 数据库连接字符串
+- `BLOB_READ_WRITE_TOKEN` - Vercel Blob 读写令牌
+- `MINIMAX_API_KEY` - MiniMax API 密钥
+- `MINIMAX_GROUP_ID` - MiniMax Group ID
 
-To learn more about Next.js, take a look at the following resources:
+## API 接口
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 角色管理
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `GET /api/characters` - 获取所有角色
+- `POST /api/characters` - 创建角色
+- `PUT /api/characters` - 更新角色
+- `DELETE /api/characters?id={id}` - 删除角色
 
-## Deploy on Vercel
+### 聊天
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `POST /api/chat` - 创建新对话
+- `PUT /api/chat` - 发送消息
+- `GET /api/chat?conversationId={id}` - 获取对话历史
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### 文件上传
+
+- `POST /api/upload` - 上传文件到 Vercel Blob

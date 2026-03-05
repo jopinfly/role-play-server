@@ -96,7 +96,7 @@ export async function PUT(request: NextRequest) {
 
   try {
     // Get AI response
-    const aiResponse = await sendChatMessage(chatHistory, character.persona);
+    const aiResponse = await sendChatMessage(chatHistory, character.persona, character.nickname);
 
     // Save user message
     await db.insert(messages).values({

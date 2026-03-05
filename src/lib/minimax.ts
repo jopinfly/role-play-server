@@ -1,25 +1,31 @@
-const MINIMAX_API_URL = 'https://api.minimax.chat/v1/text/chatcompletion_v2';
+const MINIMAX_API_URL = 'https://api.minimaxi.com/v1/text/chatcompletion_v2';
+const DEFAULT_MODEL = 'M2-her';
 
 interface Message {
   role: 'system' | 'user' | 'assistant';
+  name?: string;
   content: string;
 }
 
 export async function sendChatMessage(
   messages: Message[],
-  characterPersona: string
+  characterPersona: string,
+  characterName?: string
 ): Promise<string> {
   const apiKey = process.env.MINIMAX_API_KEY;
-  const groupId = process.env.MINIMAX_GROUP_ID;
 
-  if (!apiKey || !groupId) {
-    throw new Error('MiniMax API key or group ID not configured');
+  if (!apiKey) {
+    throw new Error('MiniMax API key not configured');
   }
 
+  // 构建消息列表，将角色人设作为 system 消息
   const systemMessage: Message = {
     role: 'system',
+    name: characterName || 'AI Assistant',
     content: characterPersona,
   };
+
+  const allMessages: Message[] = [systemMessage, ...messages];
 
   const response = await fetch(MINIMAX_API_URL, {
     method: 'POST',
@@ -28,9 +34,8 @@ export async function sendChatMessage(
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: 'abab6.5s-chat',
-      group_id: groupId,
-      messages: [systemMessage, ...messages],
+      model: DEFAULT_MODEL,
+      messages: allMessages,
     }),
   });
 
@@ -40,5 +45,10 @@ export async function sendChatMessage(
   }
 
   const data = await response.json();
+
+  if (data.base_resp && data.base_resp.status_code !== 0) {
+    throw new Error(`MiniMax API error: ${data.base_resp.status_msg}`);
+  }
+
   return data.choices[0].message.content;
 }

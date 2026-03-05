@@ -6,34 +6,34 @@ export const characters = pgTable('characters', {
   id: serial('id').primaryKey(),
   nickname: text('nickname').notNull(),
   realName: text('real_name').notNull(),
-  avatar: text('avatar').notNull(), // Vercel Blob URL
-  persona: text('persona').notNull(), // 人设描述
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  avatar: text('avatar').notNull(),
+  persona: text('persona').notNull(),
+  createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull(),
 });
 
 export const moments = pgTable('moments', {
-  id: serial('id').id,
+  id: serial('id').primaryKey(),
   characterId: integer('character_id').references(() => characters.id).notNull(),
-  content: text('content'), // 文字内容
-  mediaType: mediaTypeEnum('media_type'), // 媒体类型
-  mediaUrl: text('media_url'), // Vercel Blob URL for image/video
-  createdAt: timestamp('created_at').defaultNow().notNull(),
+  content: text('content'),
+  mediaType: mediaTypeEnum('media_type'),
+  mediaUrl: text('media_url'),
+  createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
 });
 
 export const conversations = pgTable('conversations', {
   id: serial('id').primaryKey(),
   characterId: integer('character_id').references(() => characters.id).notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull(),
 });
 
 export const messages = pgTable('messages', {
   id: serial('id').primaryKey(),
   conversationId: integer('conversation_id').references(() => conversations.id).notNull(),
-  role: text('role').notNull(), // 'user' or 'assistant'
+  role: text('role').notNull(),
   content: text('content').notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
+  createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
 });
 
 export type Character = typeof characters.$inferSelect;

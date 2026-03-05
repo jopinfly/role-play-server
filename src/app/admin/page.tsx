@@ -30,17 +30,16 @@ export default function AdminPage() {
   const [characters, setCharacters] = useState<Character[]>([]);
   const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState({
     nickname: '',
     realName: '',
     avatar: '',
     persona: '',
   });
-  const [moments, setMoments] = useState<Moment[]>([]);
   const [momentContents, setMomentContents] = useState<{ content: string; mediaType: string; mediaUrl: string }[]>([]);
 
   // Chat state
-  const [conversations, setConversations] = useState<{ id: number; characterId: number; createdAt: string }[]>([]);
   const [currentConversation, setCurrentConversation] = useState<number | null>(null);
   const [chatMessages, setChatMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
@@ -55,6 +54,13 @@ export default function AdminPage() {
     const res = await fetch('/api/characters');
     const data = await res.json();
     setCharacters(data);
+  };
+
+  const resetForm = () => {
+    setFormData({ nickname: '', realName: '', avatar: '', persona: '' });
+    setMomentContents([]);
+    setShowAddForm(false);
+    setEditingId(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -72,13 +78,48 @@ export default function AdminPage() {
       });
 
       if (res.ok) {
-        setShowAddForm(false);
-        setFormData({ nickname: '', realName: '', avatar: '', persona: '' });
-        setMomentContents([]);
+        resetForm();
         fetchCharacters();
       }
     } catch (error) {
       console.error('Error creating character:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleEdit = (character: Character) => {
+    setEditingId(character.id);
+    setFormData({
+      nickname: character.nickname,
+      realName: character.realName,
+      avatar: character.avatar,
+      persona: character.persona,
+    });
+    setShowAddForm(true);
+  };
+
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingId) return;
+
+    setIsLoading(true);
+    try {
+      const res = await fetch('/api/characters', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: editingId,
+          ...formData,
+        }),
+      });
+
+      if (res.ok) {
+        resetForm();
+        fetchCharacters();
+      }
+    } catch (error) {
+      console.error('Error updating character:', error);
     } finally {
       setIsLoading(false);
     }
@@ -100,6 +141,7 @@ export default function AdminPage() {
     const data = await res.json();
     setCurrentConversation(data.conversationId);
     setChatMessages([]);
+    setSelectedCharacter(data.character);
     setActiveTab('chat');
   };
 
@@ -145,12 +187,12 @@ export default function AdminPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const formData = new FormData();
-    formData.append('file', file);
+    const formDataUpload = new FormData();
+    formDataUpload.append('file', file);
 
     const res = await fetch('/api/upload', {
       method: 'POST',
-      body: formData,
+      body: formDataUpload,
     });
     const data = await res.json();
     setFormData(prev => ({ ...prev, avatar: data.url }));
@@ -183,7 +225,10 @@ export default function AdminPage() {
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-semibold">角色列表</h2>
               <button
-                onClick={() => setShowAddForm(true)}
+                onClick={() => {
+                  resetForm();
+                  setShowAddForm(true);
+                }}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
               >
                 添加角色
@@ -192,8 +237,10 @@ export default function AdminPage() {
 
             {showAddForm && (
               <div className="bg-white p-6 rounded-lg shadow mb-6">
-                <h3 className="text-lg font-semibold mb-4">添加新角色</h3>
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <h3 className="text-lg font-semibold mb-4">
+                  {editingId ? '编辑角色' : '添加新角色'}
+                </h3>
+                <form onSubmit={editingId ? handleUpdate : handleSubmit} className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium mb-1">昵称</label>
                     <input
@@ -237,51 +284,53 @@ export default function AdminPage() {
                     />
                   </div>
 
-                  <div className="border-t pt-4">
-                    <h4 className="font-medium mb-2">朋友圈内容（可选）</h4>
-                    {momentContents.map((moment, index) => (
-                      <div key={index} className="flex gap-2 mb-2">
-                        <select
-                          value={moment.mediaType}
-                          onChange={e => {
-                            const newMoments = [...momentContents];
-                            newMoments[index].mediaType = e.target.value;
-                            setMomentContents(newMoments);
-                          }}
-                          className="px-2 py-1 border rounded"
-                        >
-                          <option value="text">文字</option>
-                          <option value="image">图片</option>
-                          <option value="video">视频</option>
-                        </select>
-                        <input
-                          type="text"
-                          placeholder="内容"
-                          value={moment.content}
-                          onChange={e => {
-                            const newMoments = [...momentContents];
-                            newMoments[index].content = e.target.value;
-                            setMomentContents(newMoments);
-                          }}
-                          className="flex-1 px-2 py-1 border rounded"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setMomentContents(prev => prev.filter((_, i) => i !== index))}
-                          className="text-red-500"
-                        >
-                          删除
-                        </button>
-                      </div>
-                    ))}
-                    <button
-                      type="button"
-                      onClick={() => setMomentContents(prev => [...prev, { content: '', mediaType: 'text', mediaUrl: '' }])}
-                      className="text-blue-600 text-sm"
-                    >
-                      + 添加朋友圈
-                    </button>
-                  </div>
+                  {!editingId && (
+                    <div className="border-t pt-4">
+                      <h4 className="font-medium mb-2">朋友圈内容（可选）</h4>
+                      {momentContents.map((moment, index) => (
+                        <div key={index} className="flex gap-2 mb-2">
+                          <select
+                            value={moment.mediaType}
+                            onChange={e => {
+                              const newMoments = [...momentContents];
+                              newMoments[index].mediaType = e.target.value;
+                              setMomentContents(newMoments);
+                            }}
+                            className="px-2 py-1 border rounded"
+                          >
+                            <option value="text">文字</option>
+                            <option value="image">图片</option>
+                            <option value="video">视频</option>
+                          </select>
+                          <input
+                            type="text"
+                            placeholder="内容"
+                            value={moment.content}
+                            onChange={e => {
+                              const newMoments = [...momentContents];
+                              newMoments[index].content = e.target.value;
+                              setMomentContents(newMoments);
+                            }}
+                            className="flex-1 px-2 py-1 border rounded"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setMomentContents(prev => prev.filter((_, i) => i !== index))}
+                            className="text-red-500"
+                          >
+                            删除
+                          </button>
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => setMomentContents(prev => [...prev, { content: '', mediaType: 'text', mediaUrl: '' }])}
+                        className="text-blue-600 text-sm"
+                      >
+                        + 添加朋友圈
+                      </button>
+                    </div>
+                  )}
 
                   <div className="flex gap-2">
                     <button
@@ -293,7 +342,7 @@ export default function AdminPage() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => setShowAddForm(false)}
+                      onClick={resetForm}
                       className="px-4 py-2 border rounded-lg"
                     >
                       取消
@@ -320,6 +369,12 @@ export default function AdminPage() {
                       className="flex-1 px-2 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
                     >
                       开始聊天
+                    </button>
+                    <button
+                      onClick={() => handleEdit(char)}
+                      className="px-2 py-1 bg-yellow-500 text-white rounded text-sm hover:bg-yellow-600"
+                    >
+                      编辑
                     </button>
                     <button
                       onClick={() => handleDelete(char.id)}
@@ -357,8 +412,15 @@ export default function AdminPage() {
 
             {/* Chat Area */}
             <div className="flex-1 flex flex-col">
-              {currentConversation ? (
+              {currentConversation && selectedCharacter ? (
                 <>
+                  <div className="p-4 border-b flex items-center gap-3">
+                    <img src={selectedCharacter.avatar} alt={selectedCharacter.nickname} className="w-10 h-10 rounded-full object-cover" />
+                    <div>
+                      <p className="font-medium">{selectedCharacter.nickname}</p>
+                      <p className="text-sm text-gray-500">{selectedCharacter.realName}</p>
+                    </div>
+                  </div>
                   <div className="flex-1 p-4 overflow-y-auto space-y-4">
                     {chatMessages.length === 0 ? (
                       <p className="text-gray-500 text-center mt-10">开始发送消息聊天吧</p>

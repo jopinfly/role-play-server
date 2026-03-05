@@ -9,6 +9,7 @@ interface Character {
   avatar: string;
   persona: string;
   createdAt: string;
+  moments?: Moment[];
 }
 
 interface Moment {
@@ -88,7 +89,7 @@ export default function AdminPage() {
     }
   };
 
-  const handleEdit = (character: Character) => {
+  const handleEdit = async (character: Character) => {
     setEditingId(character.id);
     setFormData({
       nickname: character.nickname,
@@ -96,6 +97,25 @@ export default function AdminPage() {
       avatar: character.avatar,
       persona: character.persona,
     });
+
+    // Fetch moments for this character
+    try {
+      const res = await fetch(`/api/characters/${character.id}`);
+      const data = await res.json();
+      if (data.moments && data.moments.length > 0) {
+        setMomentContents(data.moments.map((m: Moment) => ({
+          content: m.content || '',
+          mediaType: m.mediaType || 'text',
+          mediaUrl: m.mediaUrl || '',
+        })));
+      } else {
+        setMomentContents([]);
+      }
+    } catch (error) {
+      console.error('Error fetching moments:', error);
+      setMomentContents([]);
+    }
+
     setShowAddForm(true);
   };
 
@@ -111,6 +131,7 @@ export default function AdminPage() {
         body: JSON.stringify({
           id: editingId,
           ...formData,
+          moments: momentContents.filter(m => m.content || m.mediaUrl),
         }),
       });
 
@@ -284,53 +305,51 @@ export default function AdminPage() {
                     />
                   </div>
 
-                  {!editingId && (
-                    <div className="border-t pt-4">
-                      <h4 className="font-medium mb-2">朋友圈内容（可选）</h4>
-                      {momentContents.map((moment, index) => (
-                        <div key={index} className="flex gap-2 mb-2">
-                          <select
-                            value={moment.mediaType}
-                            onChange={e => {
-                              const newMoments = [...momentContents];
-                              newMoments[index].mediaType = e.target.value;
-                              setMomentContents(newMoments);
-                            }}
-                            className="px-2 py-1 border rounded"
-                          >
-                            <option value="text">文字</option>
-                            <option value="image">图片</option>
-                            <option value="video">视频</option>
-                          </select>
-                          <input
-                            type="text"
-                            placeholder="内容"
-                            value={moment.content}
-                            onChange={e => {
-                              const newMoments = [...momentContents];
-                              newMoments[index].content = e.target.value;
-                              setMomentContents(newMoments);
-                            }}
-                            className="flex-1 px-2 py-1 border rounded"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setMomentContents(prev => prev.filter((_, i) => i !== index))}
-                            className="text-red-500"
-                          >
-                            删除
-                          </button>
-                        </div>
-                      ))}
-                      <button
-                        type="button"
-                        onClick={() => setMomentContents(prev => [...prev, { content: '', mediaType: 'text', mediaUrl: '' }])}
-                        className="text-blue-600 text-sm"
-                      >
-                        + 添加朋友圈
-                      </button>
-                    </div>
-                  )}
+                  <div className="border-t pt-4">
+                    <h4 className="font-medium mb-2">朋友圈内容（可选）</h4>
+                    {momentContents.map((moment, index) => (
+                      <div key={index} className="flex gap-2 mb-2">
+                        <select
+                          value={moment.mediaType}
+                          onChange={e => {
+                            const newMoments = [...momentContents];
+                            newMoments[index].mediaType = e.target.value;
+                            setMomentContents(newMoments);
+                          }}
+                          className="px-2 py-1 border rounded"
+                        >
+                          <option value="text">文字</option>
+                          <option value="image">图片</option>
+                          <option value="video">视频</option>
+                        </select>
+                        <input
+                          type="text"
+                          placeholder="内容"
+                          value={moment.content}
+                          onChange={e => {
+                            const newMoments = [...momentContents];
+                            newMoments[index].content = e.target.value;
+                            setMomentContents(newMoments);
+                          }}
+                          className="flex-1 px-2 py-1 border rounded"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setMomentContents(prev => prev.filter((_, i) => i !== index))}
+                          className="text-red-500"
+                        >
+                          删除
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => setMomentContents(prev => [...prev, { content: '', mediaType: 'text', mediaUrl: '' }])}
+                      className="text-blue-600 text-sm"
+                    >
+                      + 添加朋友圈
+                    </button>
+                  </div>
 
                   <div className="flex gap-2">
                     <button

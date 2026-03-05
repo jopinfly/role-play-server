@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   const body = await request.json();
-  const { id, nickname, realName, avatar, persona } = body;
+  const { id, nickname, realName, avatar, persona, moments: momentContents } = body;
 
   if (!id) {
     return NextResponse.json({ error: 'ID required' }, { status: 400 });
@@ -62,6 +62,26 @@ export async function PUT(request: NextRequest) {
     })
     .where(eq(characters.id, id))
     .returning();
+
+  // Update moments if provided
+  if (momentContents !== undefined) {
+    // Delete existing moments
+    await db.delete(moments).where(eq(moments.characterId, id));
+
+    // Insert new moments
+    if (momentContents && momentContents.length > 0) {
+      for (const moment of momentContents) {
+        if (moment.content || moment.mediaUrl) {
+          await db.insert(moments).values({
+            characterId: id,
+            content: moment.content,
+            mediaType: moment.mediaType,
+            mediaUrl: moment.mediaUrl,
+          });
+        }
+      }
+    }
+  }
 
   return NextResponse.json(updated);
 }

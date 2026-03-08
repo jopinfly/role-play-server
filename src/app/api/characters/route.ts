@@ -10,7 +10,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { nickname, realName, avatar, persona, momentContents } = body;
+  const { nickname, realName, avatar, persona, voice, momentContents } = body;
 
   if (!nickname || !realName || !avatar || !persona) {
     return NextResponse.json(
@@ -26,6 +26,7 @@ export async function POST(request: NextRequest) {
       realName,
       avatar,
       persona,
+      voice,
     })
     .returning();
 
@@ -45,7 +46,7 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   const body = await request.json();
-  const { id, nickname, realName, avatar, persona, moments: momentContents } = body;
+  const { id, nickname, realName, avatar, persona, voice, moments: momentContents } = body;
 
   if (!id) {
     return NextResponse.json({ error: 'ID required' }, { status: 400 });
@@ -58,6 +59,7 @@ export async function PUT(request: NextRequest) {
       realName,
       avatar,
       persona,
+      voice,
       updatedAt: new Date(),
     })
     .where(eq(characters.id, id))

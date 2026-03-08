@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run:*)",
+      "Bash(yes:*)",
+      "Bash(pkill:*)",
+      "Bash(echo SELECT ''TRUNCATE conversations CASCADE'';:*)",
+      "Bash(source:*)",
+      "Bash(psql:*)",
+      "Bash(curl:*)",
+      "Bash(sed:*)"
+    ]
+  }
+}

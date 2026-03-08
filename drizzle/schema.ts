@@ -8,6 +8,7 @@ export const characters = pgTable('characters', {
   realName: text('real_name').notNull(),
   avatar: text('avatar').notNull(),
   persona: text('persona').notNull(),
+  voice: text('voice'),
   createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull(),
 });
@@ -23,7 +24,9 @@ export const moments = pgTable('moments', {
 
 export const conversations = pgTable('conversations', {
   id: serial('id').primaryKey(),
+  userId: text('user_id').default('temp').notNull(),
   characterId: integer('character_id').references(() => characters.id).notNull(),
+  favorability: integer('favorability').default(0).notNull(),
   createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull(),
 });
